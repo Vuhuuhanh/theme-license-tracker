@@ -198,45 +198,116 @@
 
       statusElement.textContent =
         'Đang ghi nhận ' + shopHost + '...';
+function sendShopToSheet(shopHost) {
+  var callbackName =
+    'wdThemeCallback_' +
+    String(Date.now());
 
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        cache: 'no-store',
-        keepalive: true,
+  var script =
+    document.createElement('script');
 
-        headers: {
-          'Content-Type':
-            'text/plain;charset=UTF-8'
-        },
+  var finished = false;
 
-        body: JSON.stringify({
-          shop_host: shopHost
-        })
-      })
-      .then(function () {
-        try {
-          localStorage.setItem(
-            storageKey,
-            '1'
-          );
-        } catch (error) {}
+  function cleanup() {
+    try {
+      delete window[callbackName];
+    } catch (error) {
+      window[callbackName] = undefined;
+    }
 
-        statusElement.textContent =
-          'Đã ghi nhận shop: ' + shopHost;
+    if (script.parentNode) {
+      script.parentNode.removeChild(script);
+    }
+  }
 
-        statusElement.className =
-          'success';
-      })
-      .catch(function (error) {
-        console.error(error);
+  var timeout = setTimeout(function () {
+    if (finished) {
+      return;
+    }
 
-        statusElement.textContent =
-          'Không thể kết nối hệ thống.';
+    finished = true;
+    cleanup();
 
-        statusElement.className =
-          'error';
-      });
+    statusElement.textContent =
+      'Không nhận được phản hồi từ Apps Script.';
+
+    statusElement.className =
+      'error';
+  }, 15000);
+
+  window[callbackName] = function (result) {
+    if (finished) {
+      return;
+    }
+
+    finished = true;
+    clearTimeout(timeout);
+    cleanup();
+
+    if (!result || !result.success) {
+      statusElement.textContent =
+        'Ghi nhận thất bại: ' +
+        (
+          result && result.code
+            ? result.code
+            : 'UNKNOWN_ERROR'
+        );
+
+      statusElement.className =
+        'error';
+
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        storageKey,
+        '1'
+      );
+    } catch (error) {}
+
+    statusElement.textContent =
+      result.exists
+        ? 'Shop đã tồn tại: ' +
+          result.shop_url
+        : 'Đã ghi nhận shop: ' +
+          result.shop_url;
+
+    statusElement.className =
+      'success';
+  };
+
+  var requestUrl =
+    APPS_SCRIPT_URL +
+    '?shop_host=' +
+    encodeURIComponent(shopHost) +
+    '&callback=' +
+    encodeURIComponent(callbackName) +
+    '&_=' +
+    Date.now();
+
+  script.src = requestUrl;
+  script.async = true;
+
+  script.onerror = function () {
+    if (finished) {
+      return;
+    }
+
+    finished = true;
+    clearTimeout(timeout);
+    cleanup();
+
+    statusElement.textContent =
+      'Không tải được Apps Script.';
+
+    statusElement.className =
+      'error';
+  };
+
+  document.head.appendChild(script);
+}
+    
     })();
   </script>
 </body>
