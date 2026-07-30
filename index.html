@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+    }
+
+    #status {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 10px;
+      color: #666;
+    }
+
+    #status.success {
+      color: #16833b;
+    }
+
+    #status.error {
+      color: #d93025;
+    }
+
+    #debug {
+      display: none;
+      padding: 8px 10px;
+      overflow-wrap: anywhere;
+      color: #777;
+      font-family: monospace;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="status">
+    Đang xác định shop...
+  </div>
+
+  <div id="debug"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var APPS_SCRIPT_URL =
+        'https://script.google.com/macros/s/AKfycbzIDIbA6Klf1fwRdkILobeucXpL1uDujHvFFelOeb9X4Pbutqd3L0-gFpZfl20DiTuB/exec';
+
+      var statusElement =
+        document.getElementById('status');
+
+      var debugElement =
+        document.getElementById('debug');
+
+      function cleanHost(value) {
+        return String(value || '')
+          .trim()
+          .toLowerCase()
+          .replace(/^https?:\/\//i, '')
+          .replace(/^www\./i, '')
+          .split('/')[0]
+          .split('?')[0]
+          .split('#')[0]
+          .split(':')[0];
+      }
+
+      function isHaravanShop(host) {
+        return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.myharavan\.com$/i
+          .test(host);
+      }
+
+      function getAncestorOrigins() {
+        var result = [];
+
+        try {
+          var origins =
+            window.location.ancestorOrigins;
+
+          for (
+            var i = 0;
+            origins && i < origins.length;
+            i++
+          ) {
+            result.push(String(origins[i]));
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+
+        return result;
+      }
+
+      function findShopHost() {
+        /*
+         * Trường hợp file đang nằm trực tiếp
+         * trên domain shop.
+         */
+        var currentHost =
+          cleanHost(window.location.host);
+
+        if (isHaravanShop(currentHost)) {
+          return currentHost;
+        }
+
+        /*
+         * Trường hợp file được nhúng:
+         *
+         * wd-digital.myharavan.com
+         *   └── web.haravan.app
+         *         └── tracker.html
+         */
+        var origins = getAncestorOrigins();
+
+        for (
+          var i = 0;
+          i < origins.length;
+          i++
+        ) {
+          try {
+            var host = cleanHost(
+              new URL(origins[i]).hostname
+            );
+
+            if (isHaravanShop(host)) {
+              return host;
+            }
+          } catch (error) {
+            // Bỏ qua origin lỗi.
+          }
+        }
+
+        return '';
+      }
+
+      var origins = getAncestorOrigins();
+      var shopHost = findShopHost();
+
+      console.log(
+        'Tracker current host:',
+        window.location.host
+      );
+
+      console.log(
+        'Tracker ancestor origins:',
+        origins
+      );
+
+      console.log(
+        'Tracker shop host:',
+        shopHost
+      );
+
+      if (!shopHost) {
+        statusElement.textContent =
+          'Không xác định được domain shop.';
+
+        statusElement.className = 'error';
+
+        debugElement.style.display = 'block';
+
+        debugElement.textContent =
+          'Host: ' +
+          window.location.host +
+          ' | Ancestors: ' +
+          JSON.stringify(origins);
+
+        return;
+      }
+
+      var storageKey =
+        'wd_theme_shop_sent_v3:' + shopHost;
+
+      try {
+        if (
+          localStorage.getItem(storageKey) === '1'
+        ) {
+          statusElement.textContent =
+            'Shop đã được ghi nhận: ' +
+            shopHost;
+
+          statusElement.className = 'success';
+          return;
+        }
+      } catch (error) {
+        // Không có localStorage vẫn tiếp tục.
+      }
+
+      statusElement.textContent =
+        'Đang ghi nhận ' + shopHost + '...';
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-store',
+        keepalive: true,
+
+        headers: {
+          'Content-Type':
+            'text/plain;charset=UTF-8'
+        },
+
+        body: JSON.stringify({
+          shop_host: shopHost
+        })
+      })
+      .then(function () {
+        try {
+          localStorage.setItem(
+            storageKey,
+            '1'
+          );
+        } catch (error) {}
+
+        statusElement.textContent =
+          'Đã ghi nhận shop: ' + shopHost;
+
+        statusElement.className =
+          'success';
+      })
+      .catch(function (error) {
+        console.error(error);
+
+        statusElement.textContent =
+          'Không thể kết nối hệ thống.';
+
+        statusElement.className =
+          'error';
+      });
+    })();
+  </script>
+</body>
+</html>
