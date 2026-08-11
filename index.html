@@ -1,441 +1,437 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1"
->
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
 
-<title>Theme License Tracker</title>
+  <title>Theme License Tracker</title>
 
-<style>
-html,
-body {
-margin: 0;
-padding: 0;
-background: transparent;
-font-family: Arial, Helvetica, sans-serif;
-font-size: 13px;
-}
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+    }
 
-\#wd-status {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 42px;
-  padding: 11px 12px;
-  color: #666;
-  background: transparent;
-}
+    #wd-status {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 42px;
+      padding: 11px 12px;
+      color: #666;
+      background: transparent;
+    }
 
-\#wd-status.success {
-  color: #16833b;
-}
+    #wd-status.success {
+      color: #16833b;
+    }
 
-\#wd-status.error {
-  color: #d93025;
-}
+    #wd-status.error {
+      color: #d93025;
+    }
 
-\#wd-debug {
-  display: none;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px 12px;
-  overflow-wrap: anywhere;
-  color: #777;
-  font-family: Consolas, Monaco, monospace;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-
-</style>
+    #wd-debug {
+      display: none;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 8px 12px;
+      overflow-wrap: anywhere;
+      color: #777;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 
 <body>
-<div id="wd-status">
-Đang xác định shop...
-</div>
+  <div id="wd-status">
+    Đang xác định shop...
+  </div>
 
-<div id="wd-debug"></div>
+  <div id="wd-debug"></div>
 
-<script>
-(function () {
-'use strict';
+  <script>
+    (function () {
+      'use strict';
 
-  var APPS\_SCRIPT\_URL =
-    '[https://script.google.com/macros/s/AKfycbzIDIbA6Klf1fwRdkILobeucXpL1uDujHvFFelOeb9X4Pbutqd3L0-gFpZfl20DiTuB/exec](https://script.google.com/macros/s/AKfycbzIDIbA6Klf1fwRdkILobeucXpL1uDujHvFFelOeb9X4Pbutqd3L0-gFpZfl20DiTuB/exec)';
+      /*
+       * URL Web App Apps Script, phải kết thúc bằng /exec.
+       */
+      var APPS_SCRIPT_URL =
+        'https://script.google.com/macros/s/AKfycbzIDIbA6Klf1fwRdkILobeucXpL1uDujHvFFelOeb9X4Pbutqd3L0-gFpZfl20DiTuB/exec';
 
-  var statusElement =
-    document.getElementById('wd-status');
+      var statusElement =
+        document.getElementById('wd-status');
 
-  var debugElement =
-    document.getElementById('wd-debug');
+      var debugElement =
+        document.getElementById('wd-debug');
 
-  var shopPattern =
-    /^[a-z0-9]\(?:[a-z0-9-]\*[a-z0-9])?\\.myharavan\\.com$/i;
+      var shopPattern =
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.myharavan\.com$/i;
 
-  function setStatus(message, type) {
-    statusElement.textContent = message;
-    statusElement.className = type || '';
-  }
+      function setStatus(message, type) {
+        statusElement.textContent = message;
+        statusElement.className = type || '';
+      }
 
-  function showDebug(message) {
-    debugElement.style.display = 'block';
-    debugElement.textContent = message;
-  }
+      function showDebug(message) {
+        debugElement.style.display = 'block';
+        debugElement.textContent = message;
+      }
 
-  function cleanHost(value) {
-    return String(value || '')
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\\/\\//i, '')
-      .replace(/^www\\./i, '')
-      .split('/')[0]
-      .split('?')[0]
-      .split('#')[0]
-      .split(':')[0]
-      .replace(/\\.$/, '');
-  }
+      function cleanHost(value) {
+        return String(value || '')
+          .trim()
+          .toLowerCase()
+          .replace(/^https?:\/\//i, '')
+          .replace(/^www\./i, '')
+          .split('/')[0]
+          .split('?')[0]
+          .split('#')[0]
+          .split(':')[0]
+          .replace(/\.$/, '');
+      }
 
-  function isHaravanShop(host) {
-    return shopPattern.test(
-      cleanHost(host)
-    );
-  }
+      function isHaravanShop(host) {
+        return shopPattern.test(
+          cleanHost(host)
+        );
+      }
 
-  function getAncestorOrigins() {
-    var result = [];
+      function getAncestorOrigins() {
+        var result = [];
 
-    try {
-      var origins =
-        window\.location.ancestorOrigins;
+        try {
+          var origins =
+            window.location.ancestorOrigins;
 
-      if (origins && origins.length) {
+          if (origins && origins.length) {
+            for (
+              var i = 0;
+              i < origins.length;
+              i++
+            ) {
+              result.push(
+                String(origins[i])
+              );
+            }
+          }
+        } catch (error) {
+          console.warn(
+            'Không đọc được ancestorOrigins:',
+            error
+          );
+        }
+
+        return result;
+      }
+
+      function hostFromOrigin(origin) {
+        try {
+          return cleanHost(
+            new URL(origin).hostname
+          );
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function findShopHost() {
+        /*
+         * Trường hợp tracker chạy trực tiếp
+         * trên domain .myharavan.com.
+         */
+        var currentHost =
+          cleanHost(window.location.host);
+
+        if (isHaravanShop(currentHost)) {
+          return currentHost;
+        }
+
+        /*
+         * Trường hợp tracker được nhúng nhiều tầng:
+         *
+         * shop.myharavan.com
+         *   └── web.haravan.app
+         *         └── GitHub Pages tracker
+         */
+        var origins =
+          getAncestorOrigins();
+
         for (
           var i = 0;
           i < origins.length;
           i++
         ) {
-          result.push(
-            String(origins[i])
-          );
+          var ancestorHost =
+            hostFromOrigin(origins[i]);
+
+          if (
+            isHaravanShop(ancestorHost)
+          ) {
+            return ancestorHost;
+          }
         }
+
+        return '';
       }
-    } catch (error) {
-      console.warn(
-        'Không đọc được ancestorOrigins:',
-        error
-      );
-    }
 
-    return result;
-  }
-
-  function hostFromOrigin(origin) {
-    try {
-      return cleanHost(
-        new URL(origin).hostname
-      );
-    } catch (error) {
-      return '';
-    }
-  }
-
-  function findShopHost() {
-    /\*
-     \* Trường hợp script chạy trực tiếp
-     \* trên domain .myharavan.com.
-     \*/
-    var currentHost =
-      cleanHost(window\.location.host);
-
-    if (isHaravanShop(currentHost)) {
-      return currentHost;
-    }
-
-    /\*
-     \* Trường hợp tracker được nhúng nhiều tầng:
-     \*
-     \* shop.myharavan.com
-     \*   └── web.haravan.app
-     \*         └── GitHub Pages tracker
-     \*/
-    var origins =
-      getAncestorOrigins();
-
-    for (
-      var i = 0;
-      i < origins.length;
-      i++
-    ) {
-      var ancestorHost =
-        hostFromOrigin(origins[i]);
-
-      if (
-        isHaravanShop(ancestorHost)
+      function buildJsonpUrl(
+        shopHost,
+        callbackName
       ) {
-        return ancestorHost;
+        var separator =
+          APPS_SCRIPT_URL.indexOf('?') === -1
+            ? '?'
+            : '&';
+
+        return (
+          APPS_SCRIPT_URL +
+          separator +
+          'shop_host=' +
+          encodeURIComponent(shopHost) +
+          '&callback=' +
+          encodeURIComponent(callbackName) +
+          '&_=' +
+          Date.now()
+        );
       }
-    }
 
-    return '';
-  }
+      function showLicenseAlert() {
+        alert(
+          'WD Theme thông báo:\n\n' +
+          'Vui lòng thanh toán theme để tiếp tục sử dụng, ' +
+          'hoặc chúng tôi sẽ liên hệ Haravan để gỡ theme này.'
+        );
+      }
 
-  function buildJsonpUrl(
-    shopHost,
-    callbackName
-  ) {
-    var separator =
-      APPS\_SCRIPT\_URL.indexOf('?') === -1
-        ? '?'
-        : '&';
+      function checkShopLicense(shopHost) {
+        var callbackName =
+          'wdThemeCallback_' +
+          Date.now() +
+          '_' +
+          Math.random()
+            .toString(36)
+            .slice(2, 10);
 
-    return (
-      APPS\_SCRIPT\_URL +
-      separator +
-      'shop\_host=' +
-      encodeURIComponent(shopHost) +
-      '&callback=' +
-      encodeURIComponent(callbackName) +
-      '&\_=' +
-      Date.now()
-    );
-  }
+        var script =
+          document.createElement('script');
 
-  function sendShopToSheet(
-    shopHost,
-    storageKey
-  ) {
-    var callbackName =
-      'wdThemeCallback\_' +
-      Date.now() +
-      '\_' +
-      Math.random()
-        .toString(36)
-        .slice(2, 10);
+        var finished = false;
 
-    var script =
-      document.createElement('script');
+        function cleanup() {
+          try {
+            delete window[callbackName];
+          } catch (error) {
+            window[callbackName] =
+              undefined;
+          }
 
-    var finished = false;
+          if (script.parentNode) {
+            script.parentNode.removeChild(
+              script
+            );
+          }
+        }
 
-    function cleanup() {
-      try {
-        delete window[callbackName];
-      } catch (error) {
+        var timeout = setTimeout(
+          function () {
+            if (finished) {
+              return;
+            }
+
+            finished = true;
+            cleanup();
+
+            setStatus(
+              'Không nhận được phản hồi từ Apps Script.',
+              'error'
+            );
+          },
+          15000
+        );
+
         window[callbackName] =
-          undefined;
-      }
+          function (result) {
+            if (finished) {
+              return;
+            }
 
-      if (script.parentNode) {
-        script.parentNode.removeChild(
-          script
+            finished = true;
+            clearTimeout(timeout);
+            cleanup();
+
+            if (
+              !result ||
+              result.success !== true
+            ) {
+              setStatus(
+                'Kiểm tra thất bại: ' +
+                (
+                  result &&
+                  result.code
+                    ? result.code
+                    : 'UNKNOWN_ERROR'
+                ),
+                'error'
+              );
+
+              return;
+            }
+
+            /*
+             * Nếu cột active của shop = "no"
+             * thì cảnh báo thanh toán theme.
+             */
+            if (
+              result.active === false ||
+              String(result.status || '')
+                .trim()
+                .toLowerCase() === 'no'
+            ) {
+              setStatus(
+                'Theme chưa được kích hoạt: ' +
+                (
+                  result.shop_url ||
+                  shopHost
+                ),
+                'error'
+              );
+
+              showLicenseAlert();
+
+              return;
+            }
+
+            /*
+             * Shop hợp lệ / đang hoạt động.
+             */
+            if (result.exists) {
+              setStatus(
+                'Shop đã được ghi nhận trước đó: ' +
+                (
+                  result.shop_url ||
+                  shopHost
+                ),
+                'success'
+              );
+            } else {
+              setStatus(
+                'Đã ghi nhận shop: ' +
+                (
+                  result.shop_url ||
+                  shopHost
+                ),
+                'success'
+              );
+            }
+          };
+
+        script.async = true;
+
+        script.src = buildJsonpUrl(
+          shopHost,
+          callbackName
         );
-      }
-    }
 
-    var timeout = setTimeout(
-      function () {
-        if (finished) {
-          return;
-        }
+        script.onerror = function () {
+          if (finished) {
+            return;
+          }
 
-        finished = true;
-        cleanup();
+          finished = true;
+          clearTimeout(timeout);
+          cleanup();
 
-        setStatus(
-          'Không nhận được phản hồi từ Apps Script.',
-          'error'
-        );
-      },
-      15000
-    );
-
-    window[callbackName] =
-      function (result) {
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-        clearTimeout(timeout);
-        cleanup();
-
-        if (
-          !result ||
-          result.success !== true
-        ) {
           setStatus(
-            'Ghi nhận thất bại: ' +
-            (
-              result &&
-              result.code
-                ? result.code
-                : 'UNKNOWN\_ERROR'
-            ),
+            'Không tải được Apps Script.',
             'error'
           );
+        };
 
-          return;
-        }
+        document.head.appendChild(script);
+      }
 
-        try {
-          localStorage.setItem(
-            storageKey,
-            '1'
-          );
-        } catch (error) {
-          console.warn(
-            'Không lưu được localStorage:',
-            error
-          );
-        }
+      /*
+       * Bắt đầu chạy.
+       */
+      if (
+        !APPS_SCRIPT_URL ||
+        APPS_SCRIPT_URL.indexOf(
+          'DAN_URL_APPS_SCRIPT'
+        ) !== -1
+      ) {
+        setStatus(
+          'Chưa cấu hình URL Apps Script.',
+          'error'
+        );
 
-        if (result.exists) {
-          setStatus(
-            'Shop đã được ghi nhận trước đó: ' +
-            (
-              result.shop\_url ||
-              shopHost
-            ),
-            'success'
-          );
-        } else {
-          setStatus(
-            'Đã ghi nhận shop: ' +
-            (
-              result.shop\_url ||
-              shopHost
-            ),
-            'success'
-          );
-        }
-      };
-
-    script.async = true;
-
-    script.src = buildJsonpUrl(
-      shopHost,
-      callbackName
-    );
-
-    script.onerror = function () {
-      if (finished) {
         return;
       }
 
-      finished = true;
-      clearTimeout(timeout);
-      cleanup();
+      var ancestorOrigins =
+        getAncestorOrigins();
 
-      setStatus(
-        'Không tải được Apps Script.',
-        'error'
+      var shopHost =
+        findShopHost();
+
+      console.log(
+        'Tracker current host:',
+        window.location.host
       );
-    };
 
-    document.head.appendChild(script);
-  }
-
-  /\*
-   \* Bắt đầu chạy.
-   \*/
-  if (
-    !APPS\_SCRIPT\_URL ||
-    APPS\_SCRIPT\_URL.indexOf(
-      'DÁN\_URL\_APPS\_SCRIPT'
-    ) !== -1
-  ) {
-    setStatus(
-      'Chưa cấu hình URL Apps Script.',
-      'error'
-    );
-
-    return;
-  }
-
-  var ancestorOrigins =
-    getAncestorOrigins();
-
-  var shopHost =
-    findShopHost();
-
-  console.log(
-    'Tracker current host:',
-    window\.location.host
-  );
-
-  console.log(
-    'Tracker ancestor origins:',
-    ancestorOrigins
-  );
-
-  console.log(
-    'Tracker shop host:',
-    shopHost
-  );
-
-  if (!shopHost) {
-    setStatus(
-      'Không xác định được domain shop.',
-      'error'
-    );
-
-    showDebug(
-      'Current host: ' +
-      window\.location.host +
-      ' | Ancestors: ' +
-      JSON.stringify(
+      console.log(
+        'Tracker ancestor origins:',
         ancestorOrigins
-      )
-    );
-
-    return;
-  }
-
-  /\*
-   \* Đổi version khi cần ép trình duyệt gửi lại.
-   \* Ví dụ v5 → v6.
-   \*/
-  var storageKey =
-    'wd\_theme\_shop\_sent\_v5:' +
-    shopHost;
-
-  try {
-    if (
-      localStorage.getItem(
-        storageKey
-      ) === '1'
-    ) {
-      setStatus(
-        'Shop đã được ghi nhận trước đó: ' +
-        shopHost,
-        'success'
       );
 
-      return;
-    }
-  } catch (error) {
-    console.warn(
-      'Không đọc được localStorage:',
-      error
-    );
-  }
+      console.log(
+        'Tracker shop host:',
+        shopHost
+      );
 
-  setStatus(
-    'Đang ghi nhận ' +
-    shopHost +
-    '...'
-  );
+      if (!shopHost) {
+        setStatus(
+          'Không xác định được domain shop.',
+          'error'
+        );
 
-  sendShopToSheet(
-    shopHost,
-    storageKey
-  );
-})();
+        showDebug(
+          'Current host: ' +
+          window.location.host +
+          ' | Ancestors: ' +
+          JSON.stringify(
+            ancestorOrigins
+          )
+        );
 
+        return;
+      }
 
-</script>
+      /*
+       * Không dùng localStorage để bỏ qua kiểm tra.
+       *
+       * Mỗi lần tracker load đều gọi Apps Script,
+       * để thay đổi active = no trong Sheet
+       * có hiệu lực ngay lần load kế tiếp.
+       */
+      setStatus(
+        'Đang kiểm tra ' +
+        shopHost +
+        '...'
+      );
+
+      checkShopLicense(
+        shopHost
+      );
+    })();
+  </script>
 </body>
 </html>
