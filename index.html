@@ -383,21 +383,6 @@
       var shopHost =
         findShopHost();
 
-      console.log(
-        'Tracker current host:',
-        window.location.host
-      );
-
-      console.log(
-        'Tracker ancestor origins:',
-        ancestorOrigins
-      );
-
-      console.log(
-        'Tracker shop host:',
-        shopHost
-      );
-
       if (!shopHost) {
         setStatus(
           'Không xác định được domain shop.',
