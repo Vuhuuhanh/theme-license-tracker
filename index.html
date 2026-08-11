@@ -62,7 +62,10 @@
       'use strict';
 
       /*
-       * URL Web App Apps Script, phải kết thúc bằng /exec.
+       * Dán URL Web App Apps Script kết thúc bằng /exec.
+       *
+       * Ví dụ:
+       * https://script.google.com/macros/s/XXXXXXXXXXXX/exec
        */
       var APPS_SCRIPT_URL =
         'https://script.google.com/macros/s/AKfycbzIDIbA6Klf1fwRdkILobeucXpL1uDujHvFFelOeb9X4Pbutqd3L0-gFpZfl20DiTuB/exec';
@@ -145,7 +148,7 @@
 
       function findShopHost() {
         /*
-         * Trường hợp tracker chạy trực tiếp
+         * Trường hợp script chạy trực tiếp
          * trên domain .myharavan.com.
          */
         var currentHost =
@@ -204,15 +207,10 @@
         );
       }
 
-      function showLicenseAlert() {
-        alert(
-          'WD Theme thông báo:\n\n' +
-          'Vui lòng thanh toán theme để tiếp tục sử dụng, ' +
-          'hoặc chúng tôi sẽ liên hệ Haravan để gỡ theme này.'
-        );
-      }
-
-      function checkShopLicense(shopHost) {
+      function sendShopToSheet(
+        shopHost,
+        storageKey
+      ) {
         var callbackName =
           'wdThemeCallback_' +
           Date.now() +
@@ -273,7 +271,7 @@
               result.success !== true
             ) {
               setStatus(
-                'Kiểm tra thất bại: ' +
+                'Ghi nhận thất bại: ' +
                 (
                   result &&
                   result.code
@@ -286,33 +284,18 @@
               return;
             }
 
-            /*
-             * Nếu cột active của shop = "no"
-             * thì cảnh báo thanh toán theme.
-             */
-            if (
-              result.active === false ||
-              String(result.status || '')
-                .trim()
-                .toLowerCase() === 'no'
-            ) {
-              setStatus(
-                'Theme chưa được kích hoạt: ' +
-                (
-                  result.shop_url ||
-                  shopHost
-                ),
-                'error'
+            try {
+              localStorage.setItem(
+                storageKey,
+                '1'
               );
-
-              showLicenseAlert();
-
-              return;
+            } catch (error) {
+              console.warn(
+                'Không lưu được localStorage:',
+                error
+              );
             }
 
-            /*
-             * Shop hợp lệ / đang hoạt động.
-             */
             if (result.exists) {
               setStatus(
                 'Shop đã được ghi nhận trước đó: ' +
@@ -365,7 +348,7 @@
       if (
         !APPS_SCRIPT_URL ||
         APPS_SCRIPT_URL.indexOf(
-          'DAN_URL_APPS_SCRIPT'
+          'DÁN_URL_APPS_SCRIPT'
         ) !== -1
       ) {
         setStatus(
@@ -416,20 +399,43 @@
       }
 
       /*
-       * Không dùng localStorage để bỏ qua kiểm tra.
-       *
-       * Mỗi lần tracker load đều gọi Apps Script,
-       * để thay đổi active = no trong Sheet
-       * có hiệu lực ngay lần load kế tiếp.
+       * Đổi version khi cần ép trình duyệt gửi lại.
+       * Ví dụ v5 → v6.
        */
+      var storageKey =
+        'wd_theme_shop_sent_v5:' +
+        shopHost;
+
+      try {
+        if (
+          localStorage.getItem(
+            storageKey
+          ) === '1'
+        ) {
+          setStatus(
+            'Shop đã được ghi nhận trước đó: ' +
+            shopHost,
+            'success'
+          );
+
+          return;
+        }
+      } catch (error) {
+        console.warn(
+          'Không đọc được localStorage:',
+          error
+        );
+      }
+
       setStatus(
-        'Đang kiểm tra ' +
+        'Đang ghi nhận ' +
         shopHost +
         '...'
       );
 
-      checkShopLicense(
-        shopHost
+      sendShopToSheet(
+        shopHost,
+        storageKey
       );
     })();
   </script>
